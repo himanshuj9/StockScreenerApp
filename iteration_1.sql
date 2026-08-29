@@ -154,3 +154,56 @@ VALUES
 (1, 2025, 4, 52.63, 12.78, 21.08, 13.37, 0.06, 1000999);
 
 select * from shareholding_pattern;
+
+CREATE TABLE balance_sheet (
+    company_id INT,
+    year INT,
+
+    equity_capital DECIMAL(15,2),
+    reserves DECIMAL(15,2),
+    borrowings DECIMAL(15,2),
+    other_liabilities DECIMAL(15,2),
+    total_liabilities DECIMAL(15,2),
+
+    fixed_assets DECIMAL(15,2),
+    cwip DECIMAL(15,2),
+    investments DECIMAL(15,2),
+    other_assets DECIMAL(15,2),
+    total_assets DECIMAL(15,2),
+
+    PRIMARY KEY (company_id, year),
+
+    FOREIGN KEY (company_id) REFERENCES companies(company_id)
+);
+
+INSERT INTO balance_sheet
+(company_id, year, equity_capital, reserves, borrowings,
+ other_liabilities, total_liabilities,
+ fixed_assets, cwip, investments, other_assets, total_assets)
+VALUES
+
+(1, 2015, 96, 4646, 418, 3754, 8914, 2660, 196, 1588, 4471, 8914),
+
+(1, 2016, 96, 6429, 323, 3711, 10559, 3416, 107, 2712, 4324, 10559),
+
+(1, 2017, 96, 7508, 560, 4241, 12405, 3304, 258, 2652, 6192, 12405),
+
+(1, 2018, 96, 8314, 533, 4820, 13763, 3732, 1405, 2141, 6485, 13763),
+
+(1, 2019, 96, 9375, 1320, 5459, 16249, 6497, 210, 2569, 6974, 16249),
+
+(1, 2020, 96, 10034, 1118, 4889, 16138, 6272, 140, 2019, 7707, 16138),
+
+(1, 2021, 96, 12710, 1093, 6456, 20355, 5859, 183, 4737, 9577, 20355),
+
+(1, 2022, 96, 13716, 1587, 7560, 22958, 5519, 426, 3248, 13765, 22958),
+
+(1, 2023, 96, 15896, 1933, 7854, 25779, 5770, 1020, 4262, 14728, 25779),
+
+(1, 2024, 96, 18632, 2474, 8698, 29901, 7147, 2698, 4588, 15468, 29901),
+
+(1, 2025, 96, 19304, 2290, 8665, 30355, 9220, 1254, 4725, 15156, 30355),
+
+(1, 2026, 96, 21276, 3929, 9218, 34519, 9640, 1849, 7062, 15968, 34519);
+
+select * from balance_sheet; 	
