@@ -207,3 +207,279 @@ VALUES
 (1, 2026, 96, 21276, 3929, 9218, 34519, 9640, 1849, 7062, 15968, 34519);
 
 select * from balance_sheet; 	
+
+-- =========================================================
+-- SAMPLE NIFTY 50 DATASET
+-- All financial/ratio/ownership numbers below are SAMPLE DATA.
+-- They are intentionally illustrative and should NOT be treated
+-- as real market or company financial data.
+-- =========================================================
+
+-- 1. Make sure the financial metrics exist.
+INSERT IGNORE INTO metrics (metric_name) VALUES
+('Sales'),
+('Expenses'),
+('Operating Profit'),
+('OPM %'),
+('Interest'),
+('Depreciation'),
+('Profit Before Tax');
+
+-- 2. Add the 50-company Nifty 50 sample set.
+-- Your existing Tata Motors/Infosys rows are preserved by symbol.
+INSERT INTO companies (company_name, symbol) VALUES
+('Adani Enterprises Ltd','ADANIENT'),
+('Adani Ports and Special Economic Zone Ltd','ADANIPORTS'),
+('Apollo Hospitals Enterprise Ltd','APOLLOHOSP'),
+('Asian Paints Ltd','ASIANPAINT'),
+('Axis Bank Ltd','AXISBANK'),
+('Bajaj Auto Ltd','BAJAJ-AUTO'),
+('Bajaj Finance Ltd','BAJFINANCE'),
+('Bajaj Finserv Ltd','BAJAJFINSV'),
+('Bharat Electronics Ltd','BEL'),
+('Bharti Airtel Ltd','BHARTIARTL'),
+('Cipla Ltd','CIPLA'),
+('Coal India Ltd','COALINDIA'),
+('Dr. Reddy''s Laboratories Ltd','DRREDDY'),
+('Eicher Motors Ltd','EICHERMOT'),
+('Eternal Ltd','ETERNAL'),
+('Grasim Industries Ltd','GRASIM'),
+('HCL Technologies Ltd','HCLTECH'),
+('HDFC Bank Ltd','HDFCBANK'),
+('HDFC Life Insurance Company Ltd','HDFCLIFE'),
+('Hindalco Industries Ltd','HINDALCO'),
+('Hindustan Unilever Ltd','HINDUNILVR'),
+('ICICI Bank Ltd','ICICIBANK'),
+('Infosys Ltd','INFY'),
+('InterGlobe Aviation Ltd','INDIGO'),
+('ITC Ltd','ITC'),
+('Jio Financial Services Ltd','JIOFIN'),
+('JSW Steel Ltd','JSWSTEEL'),
+('Kotak Mahindra Bank Ltd','KOTAKBANK'),
+('Larsen & Toubro Ltd','LT'),
+('Mahindra & Mahindra Ltd','M&M'),
+('Maruti Suzuki India Ltd','MARUTI'),
+('Max Healthcare Institute Ltd','MAXHEALTH'),
+('Nestle India Ltd','NESTLEIND'),
+('NTPC Ltd','NTPC'),
+('Oil & Natural Gas Corporation Ltd','ONGC'),
+('Power Grid Corporation of India Ltd','POWERGRID'),
+('Reliance Industries Ltd','RELIANCE'),
+('SBI Life Insurance Company Ltd','SBILIFE'),
+('Shriram Finance Ltd','SHRIRAMFIN'),
+('State Bank of India','SBIN'),
+('Sun Pharmaceutical Industries Ltd','SUNPHARMA'),
+('Tata Consultancy Services Ltd','TCS'),
+('Tata Consumer Products Ltd','TATACONSUM'),
+('Tata Motors Passenger Vehicles Ltd','TMPV'),
+('Tata Steel Ltd','TATASTEEL'),
+('Tech Mahindra Ltd','TECHM'),
+('Titan Company Ltd','TITAN'),
+('Trent Ltd','TRENT'),
+('UltraTech Cement Ltd','ULTRACEMCO'),
+('Wipro Ltd','WIPRO')
+ON DUPLICATE KEY UPDATE company_name = VALUES(company_name);
+
+-- 3. Balance-sheet table.
+-- Run this only if you have not already created it.
+CREATE TABLE IF NOT EXISTS balance_sheet (
+    company_id INT,
+    year INT,
+    equity_capital DECIMAL(15,2),
+    reserves DECIMAL(15,2),
+    borrowings DECIMAL(15,2),
+    other_liabilities DECIMAL(15,2),
+    total_liabilities DECIMAL(15,2),
+    fixed_assets DECIMAL(15,2),
+    cwip DECIMAL(15,2),
+    investments DECIMAL(15,2),
+    other_assets DECIMAL(15,2),
+    total_assets DECIMAL(15,2),
+    PRIMARY KEY (company_id, year),
+    FOREIGN KEY (company_id) REFERENCES companies(company_id)
+);
+
+-- 4. Financial results:
+-- 2024 annual + Q1-Q4 2025 for all 50 companies.
+INSERT IGNORE INTO financial_results
+(company_id, metric_id, year, quarter, value)
+SELECT
+    c.company_id,
+    m.metric_id,
+    d.year,
+    d.quarter,
+    CASE m.metric_name
+        WHEN 'Sales' THEN 5000 + c.company_id * 125 + d.quarter * 80
+        WHEN 'Expenses' THEN 3600 + c.company_id * 90 + d.quarter * 60
+        WHEN 'Operating Profit' THEN 1400 + c.company_id * 35 + d.quarter * 20
+        WHEN 'OPM %' THEN 18 + MOD(c.company_id, 15)
+        WHEN 'Interest' THEN 100 + c.company_id * 4 + d.quarter * 3
+        WHEN 'Depreciation' THEN 150 + c.company_id * 5 + d.quarter * 4
+        WHEN 'Profit Before Tax' THEN 1050 + c.company_id * 28 + d.quarter * 15
+    END
+FROM companies c
+CROSS JOIN metrics m
+CROSS JOIN (
+    SELECT 2024 AS year, 0 AS quarter
+    UNION ALL SELECT 2025, 1
+    UNION ALL SELECT 2025, 2
+    UNION ALL SELECT 2025, 3
+    UNION ALL SELECT 2025, 4
+) d
+WHERE c.symbol IN ('ADANIENT','ADANIPORTS','APOLLOHOSP','ASIANPAINT','AXISBANK','BAJAJ-AUTO','BAJFINANCE','BAJAJFINSV','BEL','BHARTIARTL','CIPLA','COALINDIA','DRREDDY','EICHERMOT','ETERNAL','GRASIM','HCLTECH','HDFCBANK','HDFCLIFE','HINDALCO','HINDUNILVR','ICICIBANK','INFY','INDIGO','ITC','JIOFIN','JSWSTEEL','KOTAKBANK','LT','M&M','MARUTI','MAXHEALTH','NESTLEIND','NTPC','ONGC','POWERGRID','RELIANCE','SBILIFE','SHRIRAMFIN','SBIN','SUNPHARMA','TCS','TATACONSUM','TMPV','TATASTEEL','TECHM','TITAN','TRENT','ULTRACEMCO','WIPRO')
+AND m.metric_name IN (
+    'Sales','Expenses','Operating Profit','OPM %',
+    'Interest','Depreciation','Profit Before Tax'
+);
+
+-- 5. Ratios:
+-- 11 sample ratios for every company for 2026.
+INSERT IGNORE INTO ratios (company_id, ratio_name, year, value)
+SELECT
+    c.company_id,
+    r.ratio_name,
+    2026,
+    CASE r.ratio_name
+        WHEN 'Market Cap' THEN 50000 + c.company_id * 3500
+        WHEN 'Current Price' THEN 500 + c.company_id * 45
+        WHEN 'Stock PE' THEN 15 + MOD(c.company_id, 35)
+        WHEN 'Book Value' THEN 100 + c.company_id * 8
+        WHEN 'Dividend Yield' THEN 0.50 + MOD(c.company_id, 20) * 0.10
+        WHEN 'ROCE' THEN 10 + MOD(c.company_id, 20) * 0.8
+        WHEN 'ROE' THEN 8 + MOD(c.company_id, 18) * 0.9
+        WHEN 'EPS' THEN 20 + c.company_id * 3
+        WHEN 'Price to Book' THEN 2 + MOD(c.company_id, 12) * 0.5
+        WHEN 'Debt to Equity' THEN 0.10 + MOD(c.company_id, 12) * 0.08
+        WHEN 'PEG Ratio' THEN 0.80 + MOD(c.company_id, 20) * 0.20
+    END
+FROM companies c
+CROSS JOIN (
+    SELECT 'Market Cap' AS ratio_name
+    UNION ALL SELECT 'Current Price'
+    UNION ALL SELECT 'Stock PE'
+    UNION ALL SELECT 'Book Value'
+    UNION ALL SELECT 'Dividend Yield'
+    UNION ALL SELECT 'ROCE'
+    UNION ALL SELECT 'ROE'
+    UNION ALL SELECT 'EPS'
+    UNION ALL SELECT 'Price to Book'
+    UNION ALL SELECT 'Debt to Equity'
+    UNION ALL SELECT 'PEG Ratio'
+) r
+WHERE c.symbol IN ('ADANIENT','ADANIPORTS','APOLLOHOSP','ASIANPAINT','AXISBANK','BAJAJ-AUTO','BAJFINANCE','BAJAJFINSV','BEL','BHARTIARTL','CIPLA','COALINDIA','DRREDDY','EICHERMOT','ETERNAL','GRASIM','HCLTECH','HDFCBANK','HDFCLIFE','HINDALCO','HINDUNILVR','ICICIBANK','INFY','INDIGO','ITC','JIOFIN','JSWSTEEL','KOTAKBANK','LT','M&M','MARUTI','MAXHEALTH','NESTLEIND','NTPC','ONGC','POWERGRID','RELIANCE','SBILIFE','SHRIRAMFIN','SBIN','SUNPHARMA','TCS','TATACONSUM','TMPV','TATASTEEL','TECHM','TITAN','TRENT','ULTRACEMCO','WIPRO');
+
+-- 6. Company information:
+-- One profile and key-points entry for every company.
+INSERT INTO company_information (company_id, about, key_points)
+SELECT
+    c.company_id,
+    CONCAT(
+        c.company_name,
+        ' is a sample company profile created for the stock screener project. ',
+        'It operates across its core business segments and is included in the Nifty 50 sample dataset.'
+    ),
+    CONCAT(
+        'Key Points:\\n',
+        '1. Nifty 50 constituent in this sample dataset.\\n',
+        '2. Sample business profile for demonstrating the stock screener UI.\\n',
+        '3. Financial and ownership figures in this dataset are illustrative only.'
+    )
+FROM companies c
+WHERE c.symbol IN ('ADANIENT','ADANIPORTS','APOLLOHOSP','ASIANPAINT','AXISBANK','BAJAJ-AUTO','BAJFINANCE','BAJAJFINSV','BEL','BHARTIARTL','CIPLA','COALINDIA','DRREDDY','EICHERMOT','ETERNAL','GRASIM','HCLTECH','HDFCBANK','HDFCLIFE','HINDALCO','HINDUNILVR','ICICIBANK','INFY','INDIGO','ITC','JIOFIN','JSWSTEEL','KOTAKBANK','LT','M&M','MARUTI','MAXHEALTH','NESTLEIND','NTPC','ONGC','POWERGRID','RELIANCE','SBILIFE','SHRIRAMFIN','SBIN','SUNPHARMA','TCS','TATACONSUM','TMPV','TATASTEEL','TECHM','TITAN','TRENT','ULTRACEMCO','WIPRO')
+ON DUPLICATE KEY UPDATE
+    about = VALUES(about),
+    key_points = VALUES(key_points);
+
+-- 7. Shareholding pattern:
+-- Four quarters of sample data for 2025.
+INSERT IGNORE INTO shareholding_pattern
+(company_id, year, quarter,
+ promoter_shareholding, fii_shareholding, dii_shareholding,
+ public_shareholding, others_shareholding, shareholders_count)
+SELECT
+    c.company_id,
+    2025,
+    q.quarter,
+    ROUND(40 + MOD(c.company_id, 15) * 0.8, 2),
+    ROUND(15 + MOD(c.company_id, 12) * 0.55 + q.quarter * 0.20, 2),
+    ROUND(12 + MOD(c.company_id, 10) * 0.60 + q.quarter * 0.15, 2),
+    ROUND(
+        100
+        - (40 + MOD(c.company_id, 15) * 0.8)
+        - (15 + MOD(c.company_id, 12) * 0.55 + q.quarter * 0.20)
+        - (12 + MOD(c.company_id, 10) * 0.60 + q.quarter * 0.15)
+        - 0.10,
+        2
+    ),
+    0.10,
+    500000 + c.company_id * 12500 + q.quarter * 5000
+FROM companies c
+CROSS JOIN (
+    SELECT 1 AS quarter
+    UNION ALL SELECT 2
+    UNION ALL SELECT 3
+    UNION ALL SELECT 4
+) q
+WHERE c.symbol IN ('ADANIENT','ADANIPORTS','APOLLOHOSP','ASIANPAINT','AXISBANK','BAJAJ-AUTO','BAJFINANCE','BAJAJFINSV','BEL','BHARTIARTL','CIPLA','COALINDIA','DRREDDY','EICHERMOT','ETERNAL','GRASIM','HCLTECH','HDFCBANK','HDFCLIFE','HINDALCO','HINDUNILVR','ICICIBANK','INFY','INDIGO','ITC','JIOFIN','JSWSTEEL','KOTAKBANK','LT','M&M','MARUTI','MAXHEALTH','NESTLEIND','NTPC','ONGC','POWERGRID','RELIANCE','SBILIFE','SHRIRAMFIN','SBIN','SUNPHARMA','TCS','TATACONSUM','TMPV','TATASTEEL','TECHM','TITAN','TRENT','ULTRACEMCO','WIPRO');
+
+-- 8. Balance sheet:
+-- Annual sample data for 2023, 2024 and 2025.
+INSERT IGNORE INTO balance_sheet
+(company_id, year, equity_capital, reserves, borrowings,
+ other_liabilities, total_liabilities,
+ fixed_assets, cwip, investments, other_assets, total_assets)
+SELECT
+    c.company_id,
+    y.year,
+    50 + c.company_id * 2,
+    5000 + c.company_id * 250 + (y.year - 2023) * 500,
+    1500 + c.company_id * 80 + (y.year - 2023) * 120,
+    3000 + c.company_id * 120 + (y.year - 2023) * 250,
+    9550 + c.company_id * 452 + (y.year - 2023) * 870,
+    3500 + c.company_id * 130 + (y.year - 2023) * 300,
+    500 + c.company_id * 30 + (y.year - 2023) * 70,
+    1500 + c.company_id * 70 + (y.year - 2023) * 150,
+    4050 + c.company_id * 222 + (y.year - 2023) * 350,
+    9550 + c.company_id * 452 + (y.year - 2023) * 870
+FROM companies c
+CROSS JOIN (
+    SELECT 2023 AS year
+    UNION ALL SELECT 2024
+    UNION ALL SELECT 2025
+) y
+WHERE c.symbol IN ('ADANIENT','ADANIPORTS','APOLLOHOSP','ASIANPAINT','AXISBANK','BAJAJ-AUTO','BAJFINANCE','BAJAJFINSV','BEL','BHARTIARTL','CIPLA','COALINDIA','DRREDDY','EICHERMOT','ETERNAL','GRASIM','HCLTECH','HDFCBANK','HDFCLIFE','HINDALCO','HINDUNILVR','ICICIBANK','INFY','INDIGO','ITC','JIOFIN','JSWSTEEL','KOTAKBANK','LT','M&M','MARUTI','MAXHEALTH','NESTLEIND','NTPC','ONGC','POWERGRID','RELIANCE','SBILIFE','SHRIRAMFIN','SBIN','SUNPHARMA','TCS','TATACONSUM','TMPV','TATASTEEL','TECHM','TITAN','TRENT','ULTRACEMCO','WIPRO');
+
+-- =========================================================
+-- 9. VERIFICATION QUERIES
+-- =========================================================
+
+SELECT COUNT(*) AS total_companies
+FROM companies;
+
+SELECT COUNT(*) AS total_metrics
+FROM metrics;
+
+SELECT COUNT(*) AS total_financial_rows
+FROM financial_results;
+
+SELECT COUNT(*) AS total_ratio_rows
+FROM ratios;
+
+SELECT COUNT(*) AS total_company_information_rows
+FROM company_information;
+
+SELECT COUNT(*) AS total_shareholding_rows
+FROM shareholding_pattern;
+
+SELECT COUNT(*) AS total_balance_sheet_rows
+FROM balance_sheet;
+
+-- Check the 50 companies:
+SELECT company_id, company_name, symbol
+FROM companies
+WHERE symbol IN ('ADANIENT','ADANIPORTS','APOLLOHOSP','ASIANPAINT','AXISBANK','BAJAJ-AUTO','BAJFINANCE','BAJAJFINSV','BEL','BHARTIARTL','CIPLA','COALINDIA','DRREDDY','EICHERMOT','ETERNAL','GRASIM','HCLTECH','HDFCBANK','HDFCLIFE','HINDALCO','HINDUNILVR','ICICIBANK','INFY','INDIGO','ITC','JIOFIN','JSWSTEEL','KOTAKBANK','LT','M&M','MARUTI','MAXHEALTH','NESTLEIND','NTPC','ONGC','POWERGRID','RELIANCE','SBILIFE','SHRIRAMFIN','SBIN','SUNPHARMA','TCS','TATACONSUM','TMPV','TATASTEEL','TECHM','TITAN','TRENT','ULTRACEMCO','WIPRO')
+ORDER BY company_id;
+
+select * from financial_results;
+select * from companies;
+select * from company_information;
