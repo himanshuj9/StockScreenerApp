@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -16,6 +16,30 @@ router = APIRouter(
     tags=["Company"]
 )
 
+@router.get("/search")
+def search_companies(
+    q: str = Query(..., min_length=1),
+    db: Session = Depends(get_db)
+):
+    search_term = f"%{q.strip()}%"
+
+    companies = (
+        db.query(Company)
+        .filter(
+            (Company.company_name.ilike(search_term)) |
+            (Company.symbol.ilike(search_term))
+        )
+        .limit(10)
+        .all()
+    )
+
+    return [
+        {
+            "company_name": company.company_name,
+            "symbol": company.symbol
+        }
+        for company in companies
+    ]
 
 @router.get("/{symbol}")
 def get_company(symbol: str, db: Session = Depends(get_db)):
