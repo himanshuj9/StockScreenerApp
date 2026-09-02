@@ -1,4 +1,4 @@
-const API_URL = "http://127.0.0.1:8000";
+const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 export async function getCompany(symbol: string) {
   const response = await fetch(
@@ -11,7 +11,6 @@ export async function getCompany(symbol: string) {
 
   return response.json();
 }
-
 
 export async function searchCompanies(query: string) {
   const response = await fetch(
