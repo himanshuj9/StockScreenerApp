@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = "https://stockscreenerapp-fb4k.onrender.com";
 
 export async function getCompany(symbol: string) {
   const response = await fetch(
