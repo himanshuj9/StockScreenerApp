@@ -98,7 +98,7 @@ function Company() {
           <div className="mt-4 flex items-center gap-6">
 
             <span className="text-2xl font-semibold">
-              ₹{ratios["Current Price"] ?? "N/A"}
+            ₹{companyData.market_data?.current_price ?? "N/A"}
             </span>
 
             <span className="text-slate-400">

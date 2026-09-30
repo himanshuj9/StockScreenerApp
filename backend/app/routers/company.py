@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from app.services.market_data import get_current_price
 
 from app.database import get_db
 from app.models.company import Company
@@ -43,6 +44,7 @@ def search_companies(
 
 @router.get("/{symbol}")
 def get_company(symbol: str, db: Session = Depends(get_db)):
+    
 
     #Get company
     company = (
@@ -56,6 +58,9 @@ def get_company(symbol: str, db: Session = Depends(get_db)):
             status_code=404,
             detail="Company not found"
         )
+
+    yahoo_symbol = f"{company.symbol}.NS"
+    current_price = get_current_price(yahoo_symbol)
 
     # Get ratios
     ratios = (
@@ -172,7 +177,9 @@ def get_company(symbol: str, db: Session = Depends(get_db)):
             "company_name": company.company_name,
             "symbol": company.symbol
         },
-
+         "market_data": {
+        "current_price": current_price
+    },
         "ratios": ratio_data,
 
         "information": {
