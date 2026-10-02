@@ -196,15 +196,36 @@
 }
 
 .home-search-button {
-  min-width: 0;
-  min-height: 54px;
-  width: 100%;
+  min-width: 120px !important;
+  width: 120px !important;
+  min-height: 54px !important;
+  height: 54px !important;
   display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   visibility: visible !important;
-  opacity: 8 !important;
+  opacity: 1 !important;
   position: relative;
-  z-index: 30;
-  overflow: visible;
+  z-index: 999 !important;
+  overflow: visible !important;
+  background: linear-gradient(135deg, #6d00f5 0%, #7c00ff 55%, #8b00f8 100%) !important;
+  color: #ffffff !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 20px rgba(109, 0, 245, 0.24) !important;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.home-search-button:hover {
+  background: linear-gradient(135deg, #5f00d9 0%, #7000ea 55%, #8000e8 100%) !important;
+  color: #ffffff !important;
+}
+
+.home-search-button:disabled {
+  background: linear-gradient(135deg, #6d00f5 0%, #7c00ff 55%, #8b00f8 100%) !important;
+  color: #ffffff !important;
+  opacity: 0.75 !important;
 }
 
 .company-search-button {
@@ -217,7 +238,9 @@
 
 @media (max-width: 640px) {
   .home-search-button {
-    width: 100%;
-    min-height: 48px;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 48px !important;
+    height: 48px !important;
   }
 }
