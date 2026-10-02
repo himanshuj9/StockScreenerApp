@@ -209,7 +209,7 @@
   z-index: 999 !important;
   overflow: visible !important;
   background: linear-gradient(135deg, #6d00f5 0%, #7c00ff 55%, #8b00f8 100%) !important;
-  color: #ffffff !important;
+  color: #000000 !important;
   border: 0 !important;
   border-radius: 12px !important;
   box-shadow: 0 8px 20px rgba(109, 0, 245, 0.24) !important;
