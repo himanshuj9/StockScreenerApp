@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { getCompany } from "../../services/api";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { getCompany, searchCompanies } from "../../services/api";
 
 type Tab =
   | "Overview"
@@ -13,6 +13,9 @@ type Tab =
 
 function Company() {
   const { symbol } = useParams();
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searching, setSearching] = useState(false);
   const [companyData, setCompanyData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -36,6 +39,30 @@ function Company() {
     fetchCompany();
   }, [symbol]);
 
+  const handleCompanySearch = async () => {
+    const query = searchQuery.trim();
+    if (!query || searching) return;
+
+    try {
+      setSearching(true);
+      const results = await searchCompanies(query);
+
+      if (results.length === 0) {
+        alert("Company not found");
+        return;
+      }
+
+      setSearchQuery("");
+      setActiveTab("Overview");
+      navigate(`/company/${results[0].symbol}`);
+    } catch (err) {
+      console.error("Search failed:", err);
+      alert("Unable to search companies");
+    } finally {
+      setSearching(false);
+    }
+  };
+
   if (loading) return <StatusScreen label="Loading company data..." />;
   if (error || !companyData) return <StatusScreen label={error || "Company not found"} error />;
 
@@ -52,13 +79,53 @@ function Company() {
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto max-w-7xl px-5 py-4 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 shadow-sm transition hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700"
+            >
+              <span className="text-lg leading-none">←</span>
+              Back
+            </button>
+
+            <div className="hidden h-8 w-px bg-slate-200 sm:block" />
+
+            <div className="flex min-w-0 flex-1 items-center gap-3">
               <Link to="/" className="brand-mark" aria-label="Back to home" />
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-violet-700">NSE: {company.symbol}</p>
                 <h1 className="mt-0.5 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">{company.company_name}</h1>
               </div>
             </div>
+
+            <div className="order-last w-full sm:order-none sm:w-auto sm:min-w-[300px]">
+              <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50 px-3 focus-within:border-violet-400 focus-within:bg-white">
+                <svg className="mr-2 h-5 w-5 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m20 20-3.5-3.5" />
+                </svg>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") handleCompanySearch();
+                  }}
+                  placeholder="Search another company..."
+                  className="w-full bg-transparent py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400"
+                  aria-label="Search another company"
+                />
+                <button
+                  type="button"
+                  onClick={handleCompanySearch}
+                  disabled={searching}
+                  className="rounded-lg bg-violet-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-violet-800 disabled:opacity-60"
+                >
+                  {searching ? "..." : "Search"}
+                </button>
+              </div>
+            </div>
+
             <div className="rounded-2xl border border-violet-100 bg-violet-50 px-5 py-3 text-right">
               <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Current price</p>
               <p className="mt-0.5 text-xl font-black text-slate-950">₹{companyData.market_data?.current_price ?? "N/A"}</p>
