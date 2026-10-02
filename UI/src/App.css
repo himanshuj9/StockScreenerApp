@@ -201,7 +201,7 @@
   width: 100%;
   display: flex !important;
   visibility: visible !important;
-  opacity: 1 !important;
+  opacity: 8 !important;
   position: relative;
   z-index: 30;
   overflow: visible;
