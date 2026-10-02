@@ -4,7 +4,6 @@ from app.services.market_data import get_market_data
 
 from app.database import get_db
 from app.models.company import Company
-from app.models.ratio import Ratio
 from app.models.company_information import CompanyInformation
 from app.models.financial_result import FinancialResult
 from app.models.metric import Metric
@@ -61,13 +60,6 @@ def get_company(symbol: str, db: Session = Depends(get_db)):
 
     yahoo_symbol = f"{company.symbol}.NS"
     market_data = get_market_data(yahoo_symbol)
-
-    # Get ratios
-    ratios = (
-        db.query(Ratio)
-        .filter(Ratio.company_id == company.company_id)
-        .all()
-    )
 
     #Get company information
     information = (
@@ -133,12 +125,6 @@ def get_company(symbol: str, db: Session = Depends(get_db)):
             "total_assets": float(data.total_assets)
         })  
 
-    #Convert ratios into a dictionary
-    ratio_data = {}
-
-    for ratio in ratios:
-        ratio_data[ratio.ratio_name] = float(ratio.value)
-
     #Convert financial results into JSON-friendly format
     financial_data = {}
 
@@ -178,8 +164,6 @@ def get_company(symbol: str, db: Session = Depends(get_db)):
             "symbol": company.symbol
         },
          "market_data": market_data,
-        "ratios": ratio_data,
-
         "information": {
             "about": information.about if information else None,
             "key_points": information.key_points if information else None
