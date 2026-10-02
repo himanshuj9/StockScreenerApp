@@ -188,3 +188,28 @@
     height: 180px;
   }
 }
+
+
+.home-search-button {
+  min-width: 112px;
+  min-height: 54px;
+  visibility: visible !important;
+  opacity: 1;
+  position: relative;
+  z-index: 30;
+}
+
+.company-search-button {
+  min-width: 58px;
+  height: 34px;
+  padding: 0 10px;
+  font-size: 11px;
+  line-height: 1;
+}
+
+@media (max-width: 640px) {
+  .home-search-button {
+    width: 100%;
+    min-height: 48px;
+  }
+}
