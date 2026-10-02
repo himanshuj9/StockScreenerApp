@@ -190,13 +190,21 @@
 }
 
 
+.home-search-row {
+  width: 100%;
+  min-width: 0;
+}
+
 .home-search-button {
-  min-width: 112px;
+  min-width: 0;
   min-height: 54px;
+  width: 100%;
+  display: flex !important;
   visibility: visible !important;
-  opacity: 1;
+  opacity: 1 !important;
   position: relative;
   z-index: 30;
+  overflow: visible;
 }
 
 .company-search-button {
