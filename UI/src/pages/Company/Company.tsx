@@ -68,6 +68,7 @@ function Company() {
 
   const company = companyData.company;
   const ratios = companyData.ratios || {};
+  const liveFundamentals = companyData.market_data?.fundamentals || {};
   const information = companyData.information || {};
   const financials = companyData.financials || [];
   const shareholding = companyData.shareholding || [];
@@ -154,12 +155,12 @@ function Company() {
       </nav>
 
       <main className="mx-auto max-w-7xl px-5 py-8 sm:px-6 sm:py-10">
-        {activeTab === "Overview" && <OverviewTab ratios={ratios} information={information} />}
+        {activeTab === "Overview" && <OverviewTab fundamentals={liveFundamentals} fallbackRatios={ratios} information={information} />}
         {activeTab === "Chart" && <ChartTab financials={financials} />}
         {activeTab === "Profit & Loss" && <ProfitLossTab financials={financials} />}
         {activeTab === "Balance Sheet" && <BalanceSheetTab balanceSheet={balanceSheet} />}
         {activeTab === "Cash Flow" && <CashFlowTab />}
-        {activeTab === "Ratios" && <RatiosTab ratios={ratios} />}
+        {activeTab === "Ratios" && <RatiosTab fundamentals={liveFundamentals} fallbackRatios={ratios} />}
         {activeTab === "Shareholding" && <ShareholdingTab shareholding={shareholding} />}
       </main>
     </div>
@@ -177,36 +178,80 @@ function StatusScreen({ label, error = false }: { label: string; error?: boolean
   );
 }
 
-function OverviewTab({ ratios, information }: { ratios: any; information: any }) {
+function OverviewTab({
+  fundamentals,
+  fallbackRatios,
+  information
+}: {
+  fundamentals: Record<string, any>;
+  fallbackRatios: Record<string, any>;
+  information: any;
+}) {
+  const metrics = Object.keys(fundamentals).length > 0 ? fundamentals : fallbackRatios;
+  const usingLiveData = Object.keys(fundamentals).length > 0;
+
   return (
     <>
       <div className="mb-7">
         <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-violet-700">Company research</p>
         <h2 className="section-heading mt-1 text-3xl font-black text-slate-950">Overview</h2>
-        <p className="mt-2 text-sm text-slate-500">Key valuation, profitability and capital structure metrics.</p>
+        <p className="mt-2 text-sm text-slate-500">
+          {usingLiveData
+            ? "Live valuation, profitability and market metrics from Yahoo Finance."
+            : "Valuation, profitability and capital structure metrics from the company database."}
+        </p>
       </div>
 
       <section>
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-extrabold text-slate-900">Key metrics</h3>
-          <span className="rounded-full bg-yellow-50 px-3 py-1.5 text-xs font-bold text-yellow-700">Fundamentals</span>
+          <span className={usingLiveData
+            ? "rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700"
+            : "rounded-full bg-yellow-50 px-3 py-1.5 text-xs font-bold text-yellow-700"}>
+            {usingLiveData ? "Live Yahoo Finance" : "Fundamentals"}
+          </span>
         </div>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          <MetricCard title="Market Cap" value={ratios["Market Cap"]} />
-          <MetricCard title="Stock P/E" value={ratios["Stock PE"]} />
-          <MetricCard title="Book Value" value={ratios["Book Value"]} />
-          <MetricCard title="ROE" value={ratios["ROE"]} />
-          <MetricCard title="ROCE" value={ratios["ROCE"]} />
-          <MetricCard title="EPS" value={ratios["EPS"]} />
-          <MetricCard title="Dividend Yield" value={ratios["Dividend Yield"]} />
-          <MetricCard title="Debt to Equity" value={ratios["Debt to Equity"]} />
-        </div>
+
+        {Object.keys(metrics).length === 0 ? (
+          <div className="market-card rounded-2xl p-6 text-sm font-semibold text-slate-500">
+            Yahoo Finance did not return fundamental metrics for this company.
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            {Object.entries(metrics).map(([name, value]) => (
+              <MetricCard key={name} title={name} value={formatMetricValue(name, value)} />
+            ))}
+          </div>
+        )}
       </section>
 
       <InfoBlock title="About" content={information.about || "No company information available."} />
       <InfoBlock title="Key points" content={information.key_points || "No key points available."} />
     </>
   );
+}
+
+function formatMetricValue(name: string, value: any) {
+  if (value === null || value === undefined) return "N/A";
+
+  if (name === "Market Cap" || name === "Enterprise Value") {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return String(value);
+
+    if (number >= 1_000_000_000_000) return `₹${(number / 1_000_000_000_000).toFixed(2)}T`;
+    if (number >= 1_000_000_000) return `₹${(number / 1_000_000_000).toFixed(2)}B`;
+    if (number >= 1_000_000) return `₹${(number / 1_000_000).toFixed(2)}M`;
+
+    return `₹${number.toLocaleString("en-IN")}`;
+  }
+
+  if (typeof value === "number") {
+    return Number.isInteger(value)
+      ? value.toLocaleString("en-IN")
+      : value.toLocaleString("en-IN", { maximumFractionDigits: 2 });
+  }
+
+  return String(value);
 }
 
 function InfoBlock({ title, content }: { title: string; content: string }) {
@@ -256,8 +301,40 @@ function CashFlowTab() {
   return <DataSection title="Cash Flow" subtitle="Cash flow statement"><div className="px-6 py-10"><p className="font-bold text-slate-700">Cash flow data is not currently being returned by the backend API.</p><p className="mt-2 text-sm text-slate-500">This section is ready to connect when the cash flow table is exposed.</p></div></DataSection>;
 }
 
-function RatiosTab({ ratios }: { ratios: any }) {
-  return <><div className="mb-7"><p className="text-xs font-extrabold uppercase tracking-[0.18em] text-violet-700">Fundamentals</p><h2 className="section-heading mt-1 text-3xl font-black text-slate-950">Financial ratios</h2></div><div className="grid grid-cols-2 gap-4 md:grid-cols-4">{Object.entries(ratios).map(([name, value]) => <MetricCard key={name} title={name} value={value} />)}</div></>;
+function RatiosTab({
+  fundamentals,
+  fallbackRatios
+}: {
+  fundamentals: Record<string, any>;
+  fallbackRatios: Record<string, any>;
+}) {
+  const metrics = Object.keys(fundamentals).length > 0 ? fundamentals : fallbackRatios;
+
+  return (
+    <>
+      <div className="mb-7">
+        <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-violet-700">Fundamentals</p>
+        <h2 className="section-heading mt-1 text-3xl font-black text-slate-950">Financial ratios</h2>
+        <p className="mt-2 text-sm text-slate-500">
+          {Object.keys(fundamentals).length > 0
+            ? "Metrics currently available from Yahoo Finance."
+            : "Metrics available in the company database."}
+        </p>
+      </div>
+
+      {Object.keys(metrics).length === 0 ? (
+        <div className="market-card rounded-2xl p-6 text-sm font-semibold text-slate-500">
+          No ratio data is currently available.
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          {Object.entries(metrics).map(([name, value]) => (
+            <MetricCard key={name} title={name} value={formatMetricValue(name, value)} />
+          ))}
+        </div>
+      )}
+    </>
+  );
 }
 
 function ShareholdingTab({ shareholding }: { shareholding: any[] }) {
