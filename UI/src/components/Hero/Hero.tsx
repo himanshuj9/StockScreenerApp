@@ -79,7 +79,7 @@ function Hero() {
           </p>
 
           <div id="screener" className="search-shell relative z-20 mx-auto mt-10 max-w-3xl rounded-2xl border border-slate-200 bg-white p-2 sm:p-2.5">
-            <div className="flex flex-col gap-2 sm:flex-row">
+            <div className="home-search-row grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_120px]">
               <div className="flex flex-1 items-center rounded-xl border border-transparent bg-slate-50 px-4 focus-within:border-violet-300 focus-within:bg-white">
                 <svg className="mr-3 h-5 w-5 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
@@ -92,14 +92,14 @@ function Hero() {
                     if (event.key === "Enter") handleSearch();
                   }}
                   placeholder="Search company or ticker..."
-                  className="w-full bg-transparent px-0 py-3.5 text-base text-slate-900 outline-none placeholder:text-slate-400"
+                  className="min-w-0 w-full bg-transparent px-0 py-3.5 text-base text-slate-900 outline-none placeholder:text-slate-400"
                   aria-label="Search company or ticker"
                 />
               </div>
               <button
                 onClick={() => handleSearch()}
                 disabled={searching}
-                className="home-search-button violet-accent relative z-20 flex shrink-0 items-center justify-center rounded-xl px-7 py-3.5 text-sm font-extrabold text-white transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-70"
+                className="home-search-button violet-accent relative z-30 flex w-full min-w-0 items-center justify-center rounded-xl px-5 py-3.5 text-sm font-extrabold text-white opacity-100 shadow-lg transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-70"
               >
                 {searching ? "Searching..." : "Search"}
               </button>
