@@ -90,6 +90,15 @@ function Company() {
 
             <div className="hidden h-8 w-px bg-slate-200 sm:block" />
 
+            <Link
+              to="/"
+              className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-4 py-2.5 text-sm font-bold text-violet-700 transition hover:border-violet-300 hover:bg-violet-100"
+            >
+              Home
+            </Link>
+
+            <div className="hidden h-8 w-px bg-slate-200 sm:block" />
+
             <div className="flex min-w-0 flex-1 items-center gap-3">
               <Link to="/" className="brand-mark" aria-label="Back to home" />
               <div>
@@ -119,7 +128,7 @@ function Company() {
                   type="button"
                   onClick={handleCompanySearch}
                   disabled={searching}
-                  className="rounded-lg bg-violet-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-violet-800 disabled:opacity-60"
+                  className="company-search-button rounded-lg bg-violet-700 px-2.5 py-1.5 text-[11px] font-bold leading-none text-white transition hover:bg-violet-800 disabled:opacity-60"
                 >
                   {searching ? "..." : "Search"}
                 </button>
