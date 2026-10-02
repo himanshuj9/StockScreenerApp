@@ -99,7 +99,7 @@ function Hero() {
               <button
                 onClick={() => handleSearch()}
                 disabled={searching}
-                className="violet-accent rounded-xl px-7 py-3.5 text-sm font-extrabold text-white transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-70"
+                className="violet-accent relative z-10 shrink-0 rounded-xl px-7 py-3.5 text-sm font-extrabold text-white transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-70"
               >
                 {searching ? "Searching..." : "Search"}
               </button>
