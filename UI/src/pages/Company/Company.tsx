@@ -276,8 +276,12 @@ function ChartTab({ symbol }: { symbol: string }) {
       try {
         setLoading(true);
         setError("");
+
         const data = await getCompanyHistory(symbol, period);
-        if (!cancelled) setHistory(data.history || []);
+
+        if (!cancelled) {
+          setHistory(Array.isArray(data.history) ? data.history : []);
+        }
       } catch (err) {
         console.error("Failed to load price history:", err);
         if (!cancelled) {
@@ -290,61 +294,101 @@ function ChartTab({ symbol }: { symbol: string }) {
     };
 
     fetchHistory();
-    return () => { cancelled = true; };
+
+    return () => {
+      cancelled = true;
+    };
   }, [symbol, period]);
 
   const chartData = {
     labels: history.map((point) => point.date),
-    datasets: [{
-      label: `${symbol} Closing Price`,
-      data: history.map((point) => point.close),
-      borderColor: "#4F46E5",
-      backgroundColor: "rgba(79, 70, 229, 0.10)",
-      borderWidth: 2.5,
-      pointRadius: 0,
-      pointHoverRadius: 4,
-      tension: 0.18,
-      fill: true,
-    }],
+    datasets: [
+      {
+        label: `${symbol} Closing Price`,
+        data: history.map((point) => point.close),
+        borderColor: "#2563EB",
+        backgroundColor: "rgba(37, 99, 235, 0.08)",
+        borderWidth: 2.5,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        pointHoverBorderWidth: 2,
+        tension: 0.2,
+        fill: true,
+      },
+    ],
   };
 
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
-    interaction: { mode: "index" as const, intersect: false },
+    animation: false,
+    normalized: true,
+    interaction: {
+      mode: "index" as const,
+      intersect: false,
+    },
     plugins: {
       legend: { display: false },
       tooltip: {
+        displayColors: false,
         callbacks: {
-          label: (context: any) => `₹${Number(context.parsed.y).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`,
+          title: (items: any[]) => items[0]?.label ?? "",
+          label: (context: any) =>
+            `₹${Number(context.parsed.y).toLocaleString("en-IN", {
+              maximumFractionDigits: 2,
+            })}`,
         },
       },
     },
     scales: {
       x: {
         grid: { display: false },
-        ticks: { maxTicksLimit: 10, maxRotation: 0 },
+        ticks: {
+          autoSkip: true,
+          maxTicksLimit: 10,
+          maxRotation: 0,
+        },
       },
       y: {
         beginAtZero: false,
         ticks: {
-          callback: (value: string | number) => `₹${Number(value).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`,
+          callback: (value: string | number) =>
+            `₹${Number(value).toLocaleString("en-IN", {
+              maximumFractionDigits: 0,
+            })}`,
         },
       },
     },
   };
 
+  const selectedLabel =
+    period === "500d"
+      ? "500 days"
+      : period === "1y"
+        ? "1 year"
+        : period === "2y"
+          ? "2 years"
+          : "5 years";
+
   return (
-    <DataSection title="Price chart" subtitle="Last 500 trading days of closing prices from Yahoo Finance.">
+    <DataSection
+      title="Price chart"
+      subtitle="Historical daily closing price from Yahoo Finance."
+    >
       <div className="border-b border-slate-100 px-6 py-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-bold text-slate-900">Historical closing price</p>
-            <p className="mt-1 text-xs text-slate-500">Daily data • newest {Math.min(history.length, 500)} trading sessions shown</p>
+            <p className="text-sm font-bold text-slate-900">
+              {symbol} historical price
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              {selectedLabel} • {history.length.toLocaleString("en-IN")} trading sessions
+            </p>
           </div>
+
           <select
             value={period}
-            onChange={(e) => setPeriod(e.target.value)}
+            onChange={(event) => setPeriod(event.target.value)}
             className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-violet-400"
             aria-label="Chart period"
           >
@@ -357,11 +401,17 @@ function ChartTab({ symbol }: { symbol: string }) {
       </div>
 
       {loading ? (
-        <div className="px-6 py-16 text-sm font-semibold text-slate-500">Loading historical prices...</div>
+        <div className="px-6 py-16 text-sm font-semibold text-slate-500">
+          Loading {selectedLabel} of historical prices...
+        </div>
       ) : error ? (
-        <div className="px-6 py-16 text-sm font-semibold text-rose-600">{error}</div>
+        <div className="px-6 py-16 text-sm font-semibold text-rose-600">
+          {error}
+        </div>
       ) : history.length === 0 ? (
-        <div className="px-6 py-16 text-sm font-semibold text-slate-500">No historical price data available.</div>
+        <div className="px-6 py-16 text-sm font-semibold text-slate-500">
+          No historical price data available.
+        </div>
       ) : (
         <div className="h-[420px] px-4 py-5 sm:px-6">
           <Line data={chartData} options={chartOptions} />
@@ -370,6 +420,7 @@ function ChartTab({ symbol }: { symbol: string }) {
     </DataSection>
   );
 }
+
 function ProfitLossTab({ financials }: { financials: any[] }) {
   if (financials.length === 0) return <DataSection title="Profit & Loss" subtitle="Financial results from the database."><EmptyState text="No financial results available." /></DataSection>;
   return <TableSection title="Profit & Loss" subtitle="Financial results from the database." rows={financials} />;
