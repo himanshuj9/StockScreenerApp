@@ -327,7 +327,13 @@ def get_price_history(yahoo_symbol: str, period: str = "500d"):
         if history.empty:
             return []
 
-        close_prices = history["Close"].dropna().tail(500)
+        close_prices = history["Close"].dropna()
+
+        # The 500d option is intentionally limited to the latest 500
+        # trading sessions. Longer selections should display the full
+        # requested period instead of being truncated to 500 points.
+        if period == "500d":
+            close_prices = close_prices.tail(500)
 
         return [
             {
