@@ -67,7 +67,7 @@ function MarketMarquee() {
         const data: MarketResponse = await getMarketIndices();
 
         if (mounted) {
-          setIndices(data.indices.filter((item) => item.price !== null));
+          setIndices(data.indices);
         }
       } catch (error) {
         console.error("Market indices failed:", error);
