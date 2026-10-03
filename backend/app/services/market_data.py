@@ -312,3 +312,30 @@ def get_market_data(yahoo_symbol: str):
 def get_current_price(yahoo_symbol: str):
     """Backward-compatible helper for code that only needs the price."""
     return get_market_data(yahoo_symbol)["current_price"]
+
+
+def get_price_history(yahoo_symbol: str, period: str = "500d"):
+    """Return daily closing prices for the requested Yahoo Finance period."""
+    try:
+        ticker = yf.Ticker(yahoo_symbol)
+        history = ticker.history(
+            period=period,
+            interval="1d",
+            auto_adjust=False,
+        )
+
+        if history.empty:
+            return []
+
+        close_prices = history["Close"].dropna().tail(500)
+
+        return [
+            {
+                "date": index.strftime("%Y-%m-%d"),
+                "close": round(float(value), 2),
+            }
+            for index, value in close_prices.items()
+        ]
+    except Exception as exc:
+        print(f"price history failed for {yahoo_symbol}: {exc}")
+        return []
