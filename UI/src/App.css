@@ -262,7 +262,7 @@
 
 .market-marquee-header {
   position: relative;
-  z-index: 2;
+  z-index: 3;
   display: flex;
   min-width: 138px;
   align-items: center;
@@ -283,7 +283,7 @@
   height: 7px;
   border-radius: 999px;
   background: #16a34a;
-  box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.10);
+  box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.1);
   animation: market-live-pulse 1.8s ease-in-out infinite;
 }
 
@@ -291,6 +291,7 @@
   min-width: 0;
   flex: 1;
   overflow: hidden;
+  position: relative;
 }
 
 .market-marquee-track {
@@ -298,7 +299,7 @@
   width: max-content;
   min-width: max-content;
   height: 100%;
-  animation: market-marquee-scroll 55s linear infinite;
+  animation: market-marquee-scroll 34s linear infinite;
   will-change: transform;
 }
 
@@ -306,6 +307,14 @@
   display: flex;
   flex-shrink: 0;
   align-items: center;
+  height: 100%;
+}
+
+.market-marquee-loading {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  min-width: max-content;
   height: 100%;
 }
 
