@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from app.services.market_data import get_market_data
+from app.services.market_data import get_market_data, get_price_history
 
 from app.database import get_db
 from app.models.company import Company
@@ -40,6 +40,20 @@ def search_companies(
         }
         for company in companies
     ]
+
+@router.get("/{symbol}/history")
+def get_company_history(symbol: str, period: str = Query("500d")):
+    """Return daily closing prices from Yahoo Finance for the chart."""
+    allowed_periods = {"1y", "2y", "5y", "500d"}
+    if period not in allowed_periods:
+        raise HTTPException(status_code=400, detail="Invalid chart period")
+
+    history = get_price_history(f"{symbol.upper()}.NS", period)
+    return {
+        "symbol": symbol.upper(),
+        "period": period,
+        "history": history,
+    }
 
 @router.get("/{symbol}")
 def get_company(symbol: str, db: Session = Depends(get_db)):
