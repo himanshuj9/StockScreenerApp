@@ -316,10 +316,23 @@ def get_current_price(yahoo_symbol: str):
 
 def get_price_history(yahoo_symbol: str, period: str = "500d"):
     """Return daily closing prices for the requested Yahoo Finance period."""
+    PERIOD_TO_START = {
+        "500d": "500d",
+        "1y": "1y",
+        "2y": "2y",
+        "5y": "5y",
+    }
+
+    if period not in PERIOD_TO_START:
+        raise ValueError("Unsupported chart period")
+
     try:
         ticker = yf.Ticker(yahoo_symbol)
+
+        # Ask Yahoo Finance for exactly the selected period.
+        # We do NOT tail(500) for 1y/2y/5y.
         history = ticker.history(
-            period=period,
+            period=PERIOD_TO_START[period],
             interval="1d",
             auto_adjust=False,
         )
@@ -329,12 +342,6 @@ def get_price_history(yahoo_symbol: str, period: str = "500d"):
 
         close_prices = history["Close"].dropna()
 
-        # The 500d option is intentionally limited to the latest 500
-        # trading sessions. Longer selections should display the full
-        # requested period instead of being truncated to 500 points.
-        if period == "500d":
-            close_prices = close_prices.tail(500)
-
         return [
             {
                 "date": index.strftime("%Y-%m-%d"),
@@ -342,6 +349,7 @@ def get_price_history(yahoo_symbol: str, period: str = "500d"):
             }
             for index, value in close_prices.items()
         ]
+
     except Exception as exc:
-        print(f"price history failed for {yahoo_symbol}: {exc}")
+        print(f"price history failed for {yahoo_symbol} ({period}): {exc}")
         return []
