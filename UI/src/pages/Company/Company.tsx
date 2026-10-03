@@ -298,9 +298,12 @@ function ChartTab({ symbol }: { symbol: string }) {
     datasets: [{
       label: `${symbol} Closing Price`,
       data: history.map((point) => point.close),
-      borderWidth: 2,
+      borderColor: "#4F46E5",
+      backgroundColor: "rgba(79, 70, 229, 0.10)",
+      borderWidth: 2.5,
       pointRadius: 0,
-      tension: 0.25,
+      pointHoverRadius: 4,
+      tension: 0.18,
       fill: true,
     }],
   };
@@ -320,7 +323,7 @@ function ChartTab({ symbol }: { symbol: string }) {
     scales: {
       x: {
         grid: { display: false },
-        ticks: { maxTicksLimit: 8, maxRotation: 0 },
+        ticks: { maxTicksLimit: 10, maxRotation: 0 },
       },
       y: {
         beginAtZero: false,
