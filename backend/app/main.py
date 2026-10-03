@@ -4,6 +4,7 @@ from sqlalchemy import text
 
 from .database import engine
 from .routers.company import router as company_router
+from .routers.market import router as market_router
 
 app = FastAPI(
     title="Stock Screener API",
@@ -20,6 +21,7 @@ app.add_middleware(
 )
 
 app.include_router(company_router)
+app.include_router(market_router)
 
 @app.get("/")
 def root():
