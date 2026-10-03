@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Filler } from "chart.js";
+import { Line } from "react-chartjs-2";
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Filler);
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { getCompany, searchCompanies } from "../../services/api";
+import { getCompany, getCompanyHistory, searchCompanies } from "../../services/api";
 
 type Tab =
   | "Overview"
@@ -155,7 +159,7 @@ function Company() {
 
       <main className="mx-auto max-w-7xl px-5 py-8 sm:px-6 sm:py-10">
         {activeTab === "Overview" && <OverviewTab fundamentals={liveFundamentals} information={information} />}
-        {activeTab === "Chart" && <ChartTab financials={financials} />}
+        {activeTab === "Chart" && <ChartTab symbol={company.symbol} />}
         {activeTab === "Profit & Loss" && <ProfitLossTab financials={financials} />}
         {activeTab === "Balance Sheet" && <BalanceSheetTab balanceSheet={balanceSheet} />}
         {activeTab === "Cash Flow" && <CashFlowTab />}
@@ -259,28 +263,110 @@ function InfoBlock({ title, content }: { title: string; content: string }) {
   );
 }
 
-function ChartTab({ financials }: { financials: any[] }) {
+function ChartTab({ symbol }: { symbol: string }) {
+  const [history, setHistory] = useState<{ date: string; close: number }[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [period, setPeriod] = useState("500d");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchHistory = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        const data = await getCompanyHistory(symbol, period);
+        if (!cancelled) setHistory(data.history || []);
+      } catch (err) {
+        console.error("Failed to load price history:", err);
+        if (!cancelled) {
+          setHistory([]);
+          setError("Unable to load historical price data.");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchHistory();
+    return () => { cancelled = true; };
+  }, [symbol, period]);
+
+  const chartData = {
+    labels: history.map((point) => point.date),
+    datasets: [{
+      label: `${symbol} Closing Price`,
+      data: history.map((point) => point.close),
+      borderWidth: 2,
+      pointRadius: 0,
+      tension: 0.25,
+      fill: true,
+    }],
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: "index" as const, intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (context: any) => `₹${Number(context.parsed.y).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`,
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { maxTicksLimit: 8, maxRotation: 0 },
+      },
+      y: {
+        beginAtZero: false,
+        ticks: {
+          callback: (value: string | number) => `₹${Number(value).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`,
+        },
+      },
+    },
+  };
+
   return (
-    <DataSection title="Financial chart" subtitle="Financial performance over time.">
-      {financials.length === 0 ? <EmptyState text="No financial data available." /> : (
-        <div className="space-y-0">
-          {financials.map((item: any, index: number) => {
-            const numericValues = Object.entries(item).filter(([key, value]) => key !== "year" && key !== "quarter" && typeof value === "number");
-            return (
-              <div key={index} className="border-b border-slate-100 px-6 py-5 last:border-0 hover:bg-slate-50">
-                <div className="mb-4 text-sm font-bold text-violet-800">{item.year}{item.quarter ? ` · ${item.quarter}` : ""}</div>
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                  {numericValues.map(([key, value]) => <div key={key}><p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{key}</p><p className="mt-1 text-lg font-black text-slate-900">{String(value)}</p></div>)}
-                </div>
-              </div>
-            );
-          })}
+    <DataSection title="Price chart" subtitle="Last 500 trading days of closing prices from Yahoo Finance.">
+      <div className="border-b border-slate-100 px-6 py-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-bold text-slate-900">Historical closing price</p>
+            <p className="mt-1 text-xs text-slate-500">Daily data • newest {Math.min(history.length, 500)} trading sessions shown</p>
+          </div>
+          <select
+            value={period}
+            onChange={(e) => setPeriod(e.target.value)}
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-violet-400"
+            aria-label="Chart period"
+          >
+            <option value="500d">500 days</option>
+            <option value="1y">1 year</option>
+            <option value="2y">2 years</option>
+            <option value="5y">5 years</option>
+          </select>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="px-6 py-16 text-sm font-semibold text-slate-500">Loading historical prices...</div>
+      ) : error ? (
+        <div className="px-6 py-16 text-sm font-semibold text-rose-600">{error}</div>
+      ) : history.length === 0 ? (
+        <div className="px-6 py-16 text-sm font-semibold text-slate-500">No historical price data available.</div>
+      ) : (
+        <div className="h-[420px] px-4 py-5 sm:px-6">
+          <Line data={chartData} options={chartOptions} />
         </div>
       )}
     </DataSection>
   );
 }
-
 function ProfitLossTab({ financials }: { financials: any[] }) {
   if (financials.length === 0) return <DataSection title="Profit & Loss" subtitle="Financial results from the database."><EmptyState text="No financial results available." /></DataSection>;
   return <TableSection title="Profit & Loss" subtitle="Financial results from the database." rows={financials} />;
