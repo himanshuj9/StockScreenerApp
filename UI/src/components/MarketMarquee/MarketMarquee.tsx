@@ -31,9 +31,7 @@ function MarketItem({ item }: { item: MarketIndex }) {
   return (
     <div className="market-marquee-item">
       <span className="market-marquee-name">{item.name}</span>
-      <span className="market-marquee-price">
-        {formatNumber(item.price)}
-      </span>
+      <span className="market-marquee-price">{formatNumber(item.price)}</span>
 
       {hasChange ? (
         <span
@@ -43,13 +41,10 @@ function MarketItem({ item }: { item: MarketIndex }) {
               : "market-marquee-change market-marquee-negative"
           }
         >
-          {isPositive ? "↑" : "↓"}{" "}
-          {Math.abs(item.change_percent ?? 0).toFixed(2)}%
+          {isPositive ? "↑" : "↓"} {Math.abs(item.change_percent ?? 0).toFixed(2)}%
         </span>
       ) : (
-        <span className="market-marquee-change market-marquee-muted">
-          —
-        </span>
+        <span className="market-marquee-change market-marquee-muted">—</span>
       )}
     </div>
   );
@@ -80,7 +75,6 @@ function MarketMarquee() {
 
     loadIndices();
 
-    // Refresh the marquee regularly so it does not remain on stale levels.
     const intervalId = window.setInterval(loadIndices, 30_000);
 
     return () => {
@@ -89,7 +83,7 @@ function MarketMarquee() {
     };
   }, []);
 
-  const items = loading && indices.length === 0 ? Array(6).fill(null) : indices;
+  const visibleIndices = indices;
 
   return (
     <section
@@ -103,29 +97,31 @@ function MarketMarquee() {
       </div>
 
       <div className="market-marquee-viewport">
-        <div className="market-marquee-track">
-          <div className="market-marquee-group">
-            {items.map((item, index) =>
-              item ? (
-                <MarketItem key={item.ticker} item={item} />
-              ) : (
-                <div className="market-marquee-item market-marquee-skeleton" key={index}>
-                  <span />
-                  <span />
-                  <span />
-                </div>
-              )
-            )}
+        {loading && visibleIndices.length === 0 ? (
+          <div className="market-marquee-loading">
+            {Array.from({ length: 7 }).map((_, index) => (
+              <div className="market-marquee-item market-marquee-skeleton" key={index}>
+                <span />
+                <span />
+                <span />
+              </div>
+            ))}
           </div>
+        ) : (
+          <div className="market-marquee-track" aria-live="off">
+            <div className="market-marquee-group">
+              {visibleIndices.map((item) => (
+                <MarketItem key={item.ticker} item={item} />
+              ))}
+            </div>
 
-          {!loading && indices.length > 0 && (
             <div className="market-marquee-group" aria-hidden="true">
-              {indices.map((item) => (
+              {visibleIndices.map((item) => (
                 <MarketItem key={`duplicate-${item.ticker}`} item={item} />
               ))}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </section>
   );
