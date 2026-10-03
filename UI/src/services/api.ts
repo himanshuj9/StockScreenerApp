@@ -23,3 +23,16 @@ export async function searchCompanies(query: string) {
 
   return response.json();
 }
+
+
+export async function getCompanyHistory(symbol: string, period = "500d") {
+  const response = await fetch(
+    `${API_URL}/api/company/${symbol.toUpperCase()}/history?period=${encodeURIComponent(period)}`
+  );
+
+  if (!response.ok) {
+    throw new Error("Historical price data unavailable");
+  }
+
+  return response.json();
+}
