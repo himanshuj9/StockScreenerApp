@@ -79,10 +79,11 @@ The frontend communicates with the backend through REST APIs and **never directl
 * [x] Company information
 * [x] Current market price integration
 * [x] Git/GitHub workflow
+* [x] Interactive stock charts
 
 ### Planned
 
-* [ ] Interactive stock charts
+
 * [ ] Cash Flow data
 * [ ] Advanced stock screening
 * [ ] Peer comparison
