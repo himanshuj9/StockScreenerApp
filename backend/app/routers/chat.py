@@ -70,7 +70,7 @@ def _generate_reply(message: str, history: list[tuple[str, str]], company_symbol
         prompt_parts.append(f"User: {message}\nMarketMate:")
 
         response = client.models.generate_content(
-            model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
+            model=os.getenv("GEMINI_MODEL", "gemini-flash-latest"),
             contents="\n\n".join(prompt_parts),
             config=types.GenerateContentConfig(temperature=0.4, max_output_tokens=600),
         )
@@ -82,10 +82,21 @@ def _generate_reply(message: str, history: list[tuple[str, str]], company_symbol
         raise
     except Exception as exc:
         logger.exception("Gemini chat request failed")
-        raise HTTPException(
-            status_code=502,
-            detail="The AI assistant could not generate a reply. Please try again shortly.",
-        ) from exc
+        error_text = str(exc).lower()
+        if any(marker in error_text for marker in ("model not found", "not found", "not supported for generatecontent", "is not found")):
+            detail = (
+                "The configured Gemini model is not available for this API key. "
+                "Set GEMINI_MODEL to a model enabled for your key, such as gemini-flash-latest, "
+                "then redeploy the backend."
+            )
+        elif any(marker in error_text for marker in ("api key", "permission_denied", "unauthenticated", "invalid_argument")):
+            detail = (
+                "Gemini rejected the request. Check that GEMINI_API_KEY is valid and that "
+                "GEMINI_MODEL is supported by that key."
+            )
+        else:
+            detail = "The AI assistant could not generate a reply. Please try again shortly."
+        raise HTTPException(status_code=502, detail=detail) from exc
 
 
 @router.post("/chat", response_model=ChatResponse)
