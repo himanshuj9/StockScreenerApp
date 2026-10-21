@@ -455,9 +455,39 @@
 }
 
 
-/* Floating StockScreener AI assistant */
-.stock-chatbot-root { position: fixed; right: 24px; bottom: 24px; z-index: 1000; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-.stock-chatbot-launcher { display:flex; align-items:center; justify-content:center; gap:10px; min-height:54px; padding:0 20px; border:0; border-radius:999px; color:#fff; background:linear-gradient(135deg,#4b2b91,#7548c8); box-shadow:0 12px 30px rgba(75,43,145,.32); font-size:14px; font-weight:800; transition:transform .18s ease,box-shadow .18s ease; }
+/* Floating StockScreener AI assistant: keep it above app content and always clickable. */
+.stock-chatbot-root {
+  position: fixed !important;
+  right: 24px !important;
+  bottom: 24px !important;
+  z-index: 2147483000 !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: none;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.stock-chatbot-launcher {
+  pointer-events: auto;
+  display:flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  min-height:56px;
+  padding:0 22px;
+  border:2px solid #ffffff;
+  border-radius:999px;
+  color:#fff !important;
+  background:linear-gradient(135deg,#4b2b91,#7548c8) !important;
+  box-shadow:0 12px 30px rgba(75,43,145,.42), 0 0 0 2px rgba(75,43,145,.16);
+  font-size:14px;
+  font-weight:800;
+  cursor:pointer;
+  transition:transform .18s ease,box-shadow .18s ease;
+}
+.stock-chatbot-panel { pointer-events: auto; }
 .stock-chatbot-launcher:hover { transform:translateY(-2px); box-shadow:0 16px 34px rgba(75,43,145,.38); }
 .stock-chatbot-launcher svg { width:22px; height:22px; }
 .stock-chatbot-launcher > span { font-size:25px; line-height:1; }
