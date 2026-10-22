@@ -5,13 +5,9 @@ import math
 import yfinance as yf
 from fastapi import APIRouter
 
-router = APIRouter(
-    prefix="/api/market",
-    tags=["Market"],
-)
+router = APIRouter(prefix="/api/market", tags=["Market"])
 
 # Yahoo Finance symbols for the indices shown in the home-page marquee.
-# ^CNXSC is the Yahoo/yfinance symbol commonly used for Nifty Smallcap 100.
 INDEXES = [
     {"name": "Nifty 50", "ticker": "^NSEI"},
     {"name": "Nifty Next 50", "ticker": "^NSMIDCP"},
@@ -37,25 +33,18 @@ def _safe_float(value):
 
 def _latest_price_data(yahoo_symbol: str):
     """
-    Get the latest available price and previous close from Yahoo Finance.
+    Prefer the newest available one-minute candle over fast_info.
 
-    fast_info is attempted first. If Yahoo does not return it for an index,
-    the endpoint falls back to recent 1-minute/daily history.
+    fast_info can be cached/stale, so it should only be used when intraday
+    history is unavailable. Yahoo Finance data may itself be delayed.
     """
     ticker = yf.Ticker(yahoo_symbol)
-
     current_price = None
     previous_close = None
+    price_timestamp = None
 
-    try:
-        fast_info = ticker.fast_info
-        current_price = _safe_float(fast_info.get("last_price"))
-        previous_close = _safe_float(fast_info.get("previous_close"))
-    except Exception as exc:
-        print(f"fast_info failed for {yahoo_symbol}: {exc}")
-
-    # During market hours, 1-minute history gives us the latest available
-    # intraday point when fast_info is unavailable.
+    # First choice: newest available intraday candle. Do not let a potentially
+    # cached fast_info value override this newer observation.
     try:
         intraday = ticker.history(
             period="1d",
@@ -63,16 +52,17 @@ def _latest_price_data(yahoo_symbol: str):
             prepost=False,
             auto_adjust=False,
         )
-
-        if current_price is None and not intraday.empty:
+        if not intraday.empty:
             close_prices = intraday["Close"].dropna()
             if not close_prices.empty:
                 current_price = _safe_float(close_prices.iloc[-1])
+                if current_price is not None:
+                    price_timestamp = intraday.index[-1].isoformat()
     except Exception as exc:
-        print(f"intraday fallback failed for {yahoo_symbol}: {exc}")
+        print(f"intraday history failed for {yahoo_symbol}: {exc}")
 
-    # Daily history supplies a reliable previous close and also works when
-    # the market is closed and no intraday candle is available.
+    # Daily history provides the previous trading day's close and a fallback
+    # price when intraday data is unavailable (for example, market holidays).
     try:
         daily = ticker.history(
             period="5d",
@@ -80,84 +70,82 @@ def _latest_price_data(yahoo_symbol: str):
             prepost=False,
             auto_adjust=False,
         )
-
         if not daily.empty:
             close_prices = daily["Close"].dropna()
-
             if current_price is None and not close_prices.empty:
                 current_price = _safe_float(close_prices.iloc[-1])
-
-            if previous_close is None and len(close_prices) >= 2:
+                if current_price is not None:
+                    price_timestamp = daily.index[-1].isoformat()
+            if len(close_prices) >= 2:
                 previous_close = _safe_float(close_prices.iloc[-2])
-
+            elif len(close_prices) == 1:
+                previous_close = _safe_float(close_prices.iloc[-1])
     except Exception as exc:
-        print(f"daily fallback failed for {yahoo_symbol}: {exc}")
+        print(f"daily history failed for {yahoo_symbol}: {exc}")
+
+    # Use fast_info only as a fallback, not as the preferred live price.
+    try:
+        fast_info = ticker.fast_info
+        if current_price is None:
+            current_price = _safe_float(fast_info.get("last_price"))
+        if previous_close is None:
+            previous_close = _safe_float(fast_info.get("previous_close"))
+    except Exception as exc:
+        print(f"fast_info fallback failed for {yahoo_symbol}: {exc}")
 
     if current_price is None:
         return None
 
-    # Some Yahoo index responses do not expose previous_close through
-    # fast_info. In that case, without a previous close we cannot calculate
-    # a trustworthy daily percentage change.
-    if previous_close is None:
-        return {
-            "price": round(current_price, 2),
-            "change": None,
-            "change_percent": None,
-        }
-
-    change = current_price - previous_close
-    change_percent = (change / previous_close) * 100 if previous_close else None
+    change = None
+    change_percent = None
+    if previous_close is not None:
+        change = current_price - previous_close
+        if previous_close:
+            change_percent = (change / previous_close) * 100
 
     return {
         "price": round(current_price, 2),
-        "change": round(change, 2),
+        "change": round(change, 2) if change is not None else None,
         "change_percent": round(change_percent, 2) if change_percent is not None else None,
+        "price_timestamp": price_timestamp,
     }
 
 
 def _fetch_index(index):
     try:
         data = _latest_price_data(index["ticker"])
-
         return {
             **index,
             **(data or {
                 "price": None,
                 "change": None,
                 "change_percent": None,
+                "price_timestamp": None,
             }),
         }
     except Exception as exc:
         print(f"Index fetch failed for {index['ticker']}: {exc}")
-
         return {
             **index,
             "price": None,
             "change": None,
             "change_percent": None,
+            "price_timestamp": None,
         }
 
 
 @router.get("/indices")
 def get_market_indices():
-    """
-    Return the latest available Yahoo Finance levels for the home-page marquee.
-
-    The requests are fetched concurrently so one slow index does not make the
-    entire marquee wait for eleven sequential Yahoo Finance calls.
-    """
+    """Return the latest available Yahoo Finance index prices concurrently."""
     results = [None] * len(INDEXES)
 
-    with ThreadPoolExecutor(max_workers=len(INDEXES)) as executor:
+    with ThreadPoolExecutor(max_workers=min(len(INDEXES), 6)) as executor:
         futures = {
             executor.submit(_fetch_index, index): position
             for position, index in enumerate(INDEXES)
         }
-
         for future in as_completed(futures):
-            position = futures[future]
-            results[position] = future.result()
+            results[futures[future]] = future.result()
 
     return {
         "source": "Yahoo Finance via yfinance",
