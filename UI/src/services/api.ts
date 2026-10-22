@@ -37,7 +37,11 @@ export async function getCompanyHistory(symbol: string, period = "500d") {
 }
 
 export async function getMarketIndices() {
-  const response = await fetch(`${API_URL}/api/market/indices`);
+  // Prevent the browser or an intermediate cache from reusing an old quote response.
+  const response = await fetch(
+    `${API_URL}/api/market/indices?_=${Date.now() }`.replace(" ", ""),
+    { cache: "no-store" }
+  );
 
   if (!response.ok) {
     throw new Error("Market indices unavailable");
