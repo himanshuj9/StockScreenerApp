@@ -39,7 +39,7 @@ export async function getCompanyHistory(symbol: string, period = "500d") {
 export async function getMarketIndices() {
   // Prevent the browser or an intermediate cache from reusing an old quote response.
   const response = await fetch(
-    `${API_URL}/api/market/indices?_=${Date.now() }`.replace(" ", ""),
+    `${API_URL}/api/market/indices?_=${Date.now()}`,
     { cache: "no-store" }
   );
 
